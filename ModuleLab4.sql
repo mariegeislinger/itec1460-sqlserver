@@ -70,3 +70,43 @@ FROM Employees AS e
 JOIN Orders AS o ON e.EmployeeID = o.EmployeeID
 GROUP BY e.EmployeeID, e.FirstName, e.LastName
 ORDER BY EmployeeID DESC;
+
+-- Query #9: Count orders per customer
+SELECT c.CustomerID, c.CompanyName, COUNT(o.OrderID) AS NumberOfOrders
+FROM Customers c
+JOIN Orders o ON c.CustomerID = o.CustomerID
+GROUP BY c.CustomerID, c.CompanyName
+ORDER BY NumberOfOrders DESC;
+
+-- Query #10: Calculate total revenue per order
+SELECT OrderID, ROUND( SUM (UnitPrice * Quantity * (1 - Discount)), 2) AS TotalRevenue
+FROM [Order Details]
+GROUP BY OrderID
+ORDER BY TotalRevenue DESC;
+
+-- Query #11: Filter orders by year
+-- I didn't know when the year started. I had removed the WHERE clause to view all Order 
+-- I was able to see the dates and applied the WHERE clause from there.
+SELECT OrderID, CustomerID, OrderDate
+FROM Orders
+WHERE YEAR(OrderDate) = 1998
+ORDER BY OrderDate;
+
+--Main Challenge Query: Create a SQL query to answer the following question:
+--"What is the total revenue for each customer in the year 1997, and how many orders did they place?"
+SELECT c.CustomerID, c.CompanyName, ROUND(SUM(od.UnitPrice * od.Quantity), 2) AS TotalRevenue, COUNT(DISTINCT o.OrderID) AS NumberOfOrders
+FROM Customers AS c
+JOIN Orders AS o ON c.CustomerID = o.CustomerID
+JOIN [Order Details] AS od ON o.OrderID = od.OrderID
+WHERE YEAR(o.OrderDate) = 1997
+GROUP BY c.CustomerID, c.CompanyName
+ORDER BY TotalRevenue DESC;
+
+-- SHOW ONLY TOP 10 CUSTOMERS
+SELECT TOP 10 c.CustomerID, c.CompanyName, ROUND(SUM(od.UnitPrice * od.Quantity), 2) AS TotalRevenue, COUNT(DISTINCT o.OrderID) AS NumberOfOrders
+FROM Customers AS c
+JOIN Orders AS o ON c.CustomerID = o.CustomerID
+JOIN [Order Details] AS od ON o.OrderID = od.OrderID
+WHERE YEAR(o.OrderDate) = 1997
+GROUP BY c.CustomerID, c.CompanyName
+ORDER BY TotalRevenue DESC;
