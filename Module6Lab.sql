@@ -91,6 +91,13 @@ SELECT
 
 SELECT * FROM AuthorStats;
 
+---ADD MORE BOOKS
+INSERT INTO Books (BookID, Title, PublicationYear, Price)
+VALUES (7, 'Emma', '1815', 45.00);
+
+INSERT INTO Books (BookID, Title, PublicationYear, Price)
+VALUES (8, 'Love and Friendship', '1790', 45.00);
+
 
 
 CREATE View AuthorContactInfo AS
@@ -139,20 +146,21 @@ WHERE BookID = 1;
 
 SELECT * From BookPriceAudit;
 
-----TEST
+----TEST RUN
+---FORGOT TO include Author in books
 CREATE View BookAuthor AS
     SELECT a.AuthorID, a.FirstName, a.LastName, b.BookID, b.Title
     From Authors a
     JOIN Books b ON a.AuthorID = b.AuthorID;
 
-UPDATE Book
+UPDATE Books
 SET AuthorID = 1
 WHERE BookID = 7;
 
-UPDATE BookAuthor 
+UPDATE Books 
 SET AuthorID = 1
 WHERE BookID = 8;
 
-INSERT INTO Books (BookID, Title, PublicationYear, Price)
-VALUES (8, 'Love and Friendship', '1790', 45.00);
+
+SELECT * FROM Books;
 
