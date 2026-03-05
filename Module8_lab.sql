@@ -103,3 +103,84 @@ WHERE i.object_id = OBJECT_ID('Products')
 ORDER BY i.name;
 GO
 
+--=============================================--
+--                  PART 2                       
+--=============================================--     
+
+-- ===== PART 2 STEP 2: ADD INVENTORY USER =====
+Your Task:
+
+Add a comment header to your module8_lab.sql file such as -- ===== PART 2 STEP 2: ADD INVENTORY USER =====
+Write the SQL to create a login called InventoryMgr with password Inv123!
+Write the SQL to create a database user for that login in PixelPizzaPalace.
+Write the SQL to grant InventoryMgr SELECT and UPDATE on the Products table only.
+Run each statement individually by right-clicking and choosing Execute Query.
+Copy the permissions query from Part 1 Step 4 into this section and run it to verify the permissions are correct.
+
+-- ===== PART 2 STEP 3: TABLE SIZES =====
+USE PixelPizzaPalace;
+GO
+
+SELECT 
+    t.name              AS TableName,
+    p.rows              AS NumberOfRows,
+    SUM(a.total_pages) * 8 AS TotalSpaceKB
+FROM sys.tables t
+JOIN sys.indexes i 
+    ON t.object_id = i.object_id
+JOIN sys.partitions p 
+    ON i.object_id = p.object_id 
+    AND i.index_id = p.index_id
+JOIN sys.allocation_units a 
+    ON p.partition_id = a.container_id
+GROUP BY t.name, p.rows
+ORDER BY TotalSpaceKB DESC;
+GO
+
+-- ===== PART 2 STEP 4: BACKUP AND RESTORE =====
+--*4a: Add a new product
+INSERT INTO Products (ProductName, Price, Stock)
+VALUES ('Ice Cream Sundae', 5.99, 60);
+GO
+
+--*4b: Back up the database with the new product included
+BACKUP DATABASE PixelPizzaPalace
+TO DISK = '/var/opt/mssql/data/PixelPizzaPalace_New.bak'
+WITH FORMAT;
+GO
+
+--*4c: Delete the product and verify it is gone
+DELETE FROM Products WHERE ProductName = 'Ice Cream Sundae';
+GO
+
+SELECT * FROM Products;
+GO
+
+--*4d: Restore the database and verify the product came back
+USE master;
+GO
+
+-- Take the database offline so we can restore it
+ALTER DATABASE PixelPizzaPalace SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+GO
+
+RESTORE DATABASE PixelPizzaPalace
+FROM DISK = '/var/opt/mssql/data/PixelPizzaPalace_New.bak'
+WITH REPLACE;
+GO
+
+-- Bring the database back online for all users
+ALTER DATABASE PixelPizzaPalace SET MULTI_USER;
+GO
+
+USE PixelPizzaPalace;
+GO
+
+SELECT * FROM Products;
+GO
+
+-- ===== PART 2 STEP 5: REFLECTION ===== 
+-- Reflection
+-- Question 1: The three most important tasks were...
+-- Question 2: Pixel Pizza Palace needs permission control because...
+-- Question 3: Without regular backups...
