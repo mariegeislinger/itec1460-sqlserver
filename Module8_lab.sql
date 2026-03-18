@@ -107,15 +107,39 @@ GO
 --                  PART 2                       
 --=============================================--     
 
--- ===== PART 2 STEP 2: ADD INVENTORY USER =====
-Your Task:
+--Part 1 of 2 > Log in and create page file
 
-Add a comment header to your module8_lab.sql file such as -- ===== PART 2 STEP 2: ADD INVENTORY USER =====
-Write the SQL to create a login called InventoryMgr with password Inv123!
-Write the SQL to create a database user for that login in PixelPizzaPalace.
-Write the SQL to grant InventoryMgr SELECT and UPDATE on the Products table only.
-Run each statement individually by right-clicking and choosing Execute Query.
-Copy the permissions query from Part 1 Step 4 into this section and run it to verify the permissions are correct.
+-- ===== PART 2 STEP 2: ADD INVENTORY USER =====
+
+CREATE LOGIN InventoryMgr WITH PASSWORD = 'Inv123!';
+GO
+
+USE PixelPizzaPalace;
+GO
+
+-- Create user for the login inside the database
+CREATE USER InventoryMgr FOR LOGIN InventoryMgr;
+GO
+
+-- Inventory manager can only view and update Products
+GRANT SELECT, UPDATE ON Products TO InventoryMgr;
+GO
+
+
+-- ===== PART 2 STEP 2 CHECK PERMISSIONS =====
+SELECT 
+    dp.name  AS UserName,
+    o.name   AS TableName,
+    p.permission_name AS Permission
+FROM sys.database_permissions p
+JOIN sys.database_principals dp 
+    ON p.grantee_principal_id = dp.principal_id
+JOIN sys.objects o 
+    ON p.major_id = o.object_id
+WHERE dp.name = 'InventoryMgr'
+ORDER BY TableName;
+GO
+
 
 -- ===== PART 2 STEP 3: TABLE SIZES =====
 USE PixelPizzaPalace;
@@ -182,5 +206,18 @@ GO
 -- ===== PART 2 STEP 5: REFLECTION ===== 
 -- Reflection
 -- Question 1: The three most important tasks were...
+--      1. Create Users and their Roles
+--      2. Access Levels 
+--      3. Backing up the data and secure it
+
 -- Question 2: Pixel Pizza Palace needs permission control because...
+--  The business have multiple individuals that only need access for particluar part of their job duties.
+--  A cashier only needs the product and order information while a manager has access to all information.
+-- This ensures that information is protected and for a need-to-know basis.
+
 -- Question 3: Without regular backups...
+-- If the information is not backup regularly, the information may go missing and is unable to retrieve. 
+-- There are many horror stories of companies not having information backup and lose their data to ransomware attacks.
+-- It is vital for each part of the company and departments to find a way to consistently back up their data.
+-- Even if the most important information is kept safe, the day-to-day tasks that is low priority can take
+-- a lot of time and money to restore or recreate.
