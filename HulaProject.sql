@@ -4,263 +4,273 @@ GO
 USE HulaTracker;
 GO
 
+---STEP 1 Create 8 Tables
+---TABLE 1, 2, & 3 - Member information with roles and status
+CREATE TABLE Role (
+    RoleID INT IDENTITY(1,1) PRIMARY KEY,
+    RoleName VARCHAR(20) NOT NULL UNIQUE,
+    Description VARCHAR(100)
+);
+
+CREATE TABLE MemberStatus (
+    MemberStatusID INT IDENTITY(1,1) PRIMARY KEY,
+    StatusName VARCHAR(20) NOT NULL UNIQUE
+);
+
+---NEEDED TO START with Status Table to start first
+
 CREATE TABLE Member (
-    MemberID   INT PRIMARY KEY IDENTITY(1,1),
-    MemberName VARCHAR(50)
+    MemberID INT IDENTITY(1,1) PRIMARY KEY,
+    MemberName VARCHAR(50) NOT NULL,
+    HawaiianName VARCHAR(50),
+    MemberStatusID INT NOT NULL,
+        CONSTRAINT FK_Member_Status FOREIGN KEY (MemberStatusID) REFERENCES MemberStatus(MemberStatusID)
 );
 
-CREATE TABLE Status (
-    StatusID            INT PRIMARY KEY IDENTITY(1,1),
-    StatusType          VARCHAR(50),
-    StatusDescription   VARCHAR(200)
-);
-
-CREATE TABLE Role (
-    RoleID          INT PRIMARY KEY IDENTITY(1,1),
-    RoleName        VARCHAR(50),
-    RoleDescription VARCHAR(200)
-);
-
+----TABLE 4 Role Assignment
 CREATE TABLE MemberRole (
-    MemberRoleID    INT PRIMARY KEY IDENTITY(1,1),
-    MemberID        INT,
-    RoleID          INT
+    MemberRoleID INT IDENTITY(1,1) PRIMARY KEY,
+    MemberID INT NOT NULL,
+    RoleID INT NOT NULL,
+        CONSTRAINT FK_MemberRole_Member FOREIGN KEY (MemberID) REFERENCES Member(MemberID),
+        CONSTRAINT FK_MemberRole_Role FOREIGN KEY (RoleID) REFERENCES Role(RoleID),
+        CONSTRAINT UQ_MemberRole UNIQUE (MemberID, RoleID)
 );
 
+---TABLE 5 - Hula Catalog
+CREATE TABLE Hula (
+    HulaID INT IDENTITY(1,1) PRIMARY KEY,
+    HulaName VARCHAR(100),
+    TitleName VARCHAR(100),
+    HulaType VARCHAR(20),
+    Description VARCHAR(200)
+);
+
+---TABLE 6 - Practice Date
 CREATE TABLE Practice (
-    PracticeID      INT PRIMARY KEY IDENTITY(1,1),
-    PracticeDate    DATE,
-    BeginTime       TIME,
-    EndTime         TIME
+    PracticeID INT IDENTITY(1,1) PRIMARY KEY,
+    PracticeDate DATE,
+    Lesson VARCHAR(100)
 );
 
+---TABLE 7 - Attendance Log
 CREATE TABLE Attendance (
-    AttendanceID    INT PRIMARY KEY IDENTITY(1,1),
-    MemberID        INT,
-    PracticeDate    DATE,
-    CONSTRAINT FK_AttendanceMember FOREIGN KEY (MemberID) REFERENCES Member(MemberID)
+    AttendanceID INT IDENTITY(1,1) PRIMARY KEY,
+    MemberID INT NOT NULL,
+    PracticeID INT NOT NULL,
+    AttendanceStatus VARCHAR(20),
+        CONSTRAINT FK_Attendance_Member FOREIGN KEY (MemberID) REFERENCES Member(MemberID),
+        CONSTRAINT FK_Attendance_Practice FOREIGN KEY (PracticeID) REFERENCES Practice(PracticeID)
 );
 
---CREATE ATTENDANCE LOG
-SELECT  m.MemberName
-        p.PracticeDate
-    FROM Attendance p
-    JOIN Member m on
-
-CREATE TABLE Role (
-    RoleID    INT PRIMARY KEY IDENTITY(1,1),
-    RoleName  VARCHAR(50),
-    RoleDescription  VARCHAR(200)
+---TABLE 8 - Performance Info
+CREATE TABLE Performance (
+    PerformanceID INT IDENTITY(1,1) PRIMARY KEY,
+    PerformanceTitle VARCHAR(100),
+    PerformanceDate DATE,
+    Location VARCHAR(100)
 );
 
-CREATE TABLE MemberRole (
-    MemberRoleID INT PRIMARY KEY IDENTITY(1,1),
-    MemberID INT,
-    RoleID INT
+---TABLE 9 - Performers at Performance
+CREATE TABLE MemberPerformance (
+    MemberPerformanceID INT IDENTITY(1,1) PRIMARY KEY,
+    MemberID INT NOT NULL,
+    PerformanceID INT NOT NULL,
+        CONSTRAINT FK_MemberPerformance_Member FOREIGN KEY (MemberID) REFERENCES Member(MemberID),
+        CONSTRAINT FK_MemberPerformance_Performance FOREIGN KEY (PerformanceID) REFERENCES Performance(PerformanceID)
 );
 
+---STEP 2 - 3 Stored Procedures / INSERT / RETRIEVE / DELETE
+---PROCEDURE 1 - INSERT VALUES
+---Values for Role
+INSERT INTO Role (RoleName, Description)
+VALUES
+    ('Dancer', 'Dancer in class'),
+    ('Performer', 'Performs at events'),
+    ('Kumu', 'Teacher'),
+    ('Holapa', 'Chanter');
 
+SELECT * FROM Role
 
-INSERT INTO Products (ProductName, Price, Stock)
-VALUES 
-    ('Pepperoni Pizza', 12.99, 50),
-    ('Cheese Pizza',    10.99, 50),
-    ('Garlic Bread',     4.99, 75),
-    ('Soda',             2.50, 200);
+---Values for Status
+INSERT INTO MemberStatus (StatusName)
+	VALUES ('Active'), ('Inactive');
 
-INSERT INTO Sales (ProductID, Quantity)
-VALUES (1, 3), (2, 2), (3, 5);
+SELECT * FROM MemberStatus
+
+---Values for Members
+INSERT INTO Member (MemberName, HawaiianName, MemberStatusID)
+SELECT MemberName, HawaiianName, ms.MemberStatusID
+FROM MemberStatus ms
+JOIN (VALUES
+    ('Val', 'Vailana', 'Active'),
+    ('Marie', 'Keala', 'Active'),
+    ('Tish', 'Malea', 'Inactive'),
+    ('Janelle', 'Kalei', 'Active'),
+    ('Tammy', 'Lu''ukia', 'Active'),
+    ('Winnie', 'Mikalalani', 'Active'),
+    ('Shiz', 'Manulani', 'Active')
+) AS m(MemberName, HawaiianName, StatusName)
+ON ms.StatusName = m.StatusName;
+
+SELECT * FROM Member
+
+---Need values for ROLE ASSIGNMENT
+INSERT INTO MemberRole (MemberID, RoleID)
+SELECT
+    m.MemberID,
+    r.RoleID
+FROM (VALUES
+    ('Val', 'Holapa'),
+    ('Marie', 'Performer'),
+    ('Tish', 'Dancer'),
+    ('Janelle', 'Performer'),
+    ('Tammy', 'Kumu')
+) AS rmap(MemberName, RoleName)
+JOIN Member m
+    ON m.MemberName = rmap.MemberName
+JOIN Role r
+    ON r.RoleName = rmap.RoleName;
+
+SELECT * FROM MemberRole
+
+---Need values for Performances
+INSERT INTO Performance (PerformanceTitle, PerformanceDate, Location)
+VALUES
+    ('IFest', '2026-04-11', 'St. Paul RiverCentre'),
+    ('Lafayette Luau', '2026-06-20', 'Lake Minnetonka'),
+    ('Project Fine', '2026-05-31', 'Winona State University'),
+    ('MN Homeschool Prom', '2026-05-16', 'Church of Open Doors – Maple Grove'),
+    ('Kahea Ordination', '2026-05-17', 'United Church of Christ – New Brighton');
 GO
 
+SELECT * FROM Performance
 
----STEP 3 Create Users & Grant Permissions - Follows Least Priviledge
----Create login at the server level of Pizza Place
-CREATE LOGIN Cashier WITH PASSWORD = 'Cash123!';
-CREATE LOGIN Manager WITH PASSWORD = 'Mangr123!';
+---Need values for Performances Assignment
+INSERT INTO MemberPerformance (MemberID, PerformanceID)
+SELECT m.MemberID, p.PerformanceID
+FROM Member m
+JOIN MemberRole mr ON m.MemberID = mr.MemberID
+JOIN Role r ON mr.RoleID = r.RoleID
+JOIN Performance p ON p.PerformanceTitle = 'IFest'
+WHERE r.RoleName = 'Performer';
+
+
+INSERT INTO MemberPerformance (MemberID, PerformanceID)
+SELECT m.MemberID, p.PerformanceID
+FROM Member m
+JOIN MemberRole mr ON m.MemberID = mr.MemberID
+JOIN Role r ON mr.RoleID = r.RoleID
+JOIN Performance p ON p.PerformanceTitle = 'Project Fine'
+WHERE r.RoleName = 'Performer';
+
+
+INSERT INTO MemberPerformance (MemberID, PerformanceID)
+SELECT m.MemberID, p.PerformanceID
+FROM Member m
+JOIN Performance p ON p.PerformanceTitle = 'MN Homeschool Prom'
+WHERE m.HawaiianName IN ('Mikalalani', 'Manulani');
+
+
+INSERT INTO MemberPerformance (MemberID, PerformanceID)
+SELECT m.MemberID, p.PerformanceID
+FROM Member m
+JOIN Performance p ON p.PerformanceTitle = 'Kahea Ordination'
+WHERE m.HawaiianName IN ('Kalei', 'Keala');
+
+INSERT INTO MemberPerformance (MemberID, PerformanceID)
+SELECT m.MemberID, p.PerformanceID
+FROM Member m
+JOIN Performance p ON p.PerformanceTitle = 'Kahea Ordination'
+WHERE m.HawaiianName IN ('Vailana');
+
+---PROCEDURE 2 - Retrieve 
+SELECT * FROM Member;
+
+---Retrieve Member Performers
+CREATE PROCEDURE sp_GetMemberPerformers
+AS
+BEGIN
+    SELECT
+        m.MemberName,
+        m.HawaiianName,
+        r.RoleName,
+        s.StatusName
+FROM Member m
+    JOIN MemberRole mr ON m.MemberID = mr.MemberID
+    JOIN Role r ON mr.RoleID = r.RoleID
+    JOIN MemberStatus s ON m.MemberStatusID = s.MemberStatusID
+    WHERE r.RoleName = 'Performer';
+END;
 GO
 
-USE PixelPizzaPalace;
-GO
-
--- Create users for the logins inside the PixelPizzaPalace database
-CREATE USER Cashier FOR LOGIN Cashier;
-CREATE USER Manager FOR LOGIN Manager;
-GO
-
--- Cashier can only read the menu and add new sales
---- GRANT SELECT is the permission
-GRANT SELECT ON Products TO Cashier;
-GRANT SELECT, INSERT ON Sales TO Cashier;
-GO
+EXECUTE sp_GetMemberPerformers;
 
 
--- Manager can do everything on both tables
-GRANT SELECT, INSERT, UPDATE, DELETE ON Products TO Manager;
-GRANT SELECT, INSERT, UPDATE, DELETE ON Sales TO Manager;
-GO
+---Retrieve Member Performers at a performance
+SELECT
+    m.MemberName,
+    m.HawaiianName,
+    p.PerformanceTitle
+FROM Performance p
+	JOIN MemberPerformance mp ON p.PerformanceID = mp.PerformanceID
+	JOIN Member m ON mp.MemberID = m.MemberID
+	JOIN MemberRole mr ON m.MemberID = mr.MemberID
+WHERE p.PerformanceTitle = 'Kahea Ordination';
 
---STEP 4 Check the user permission
+
+---PROCEDURE 3 - Delete Record
+---VIEW ALL RECORDS
+Select * From Member
+
+---ADDED SAME RECORD TWICE - DELETE THE DUPLICATES
+---Needed to delete on Constraint References
+DELETE
+FROM MemberPerformance
+WHERE MemberID BETWEEN 8 AND 14;
+
+DELETE
+FROM MemberRole
+WHERE MemberID BETWEEN 8 AND 14;
+
+DELETE
+FROM Attendance
+WHERE MemberID BETWEEN 8 AND 14;
+
+DELETE
+FROM Member
+WHERE MemberID BETWEEN 8 AND 14;
+
+
+---STEP 3 Create 2 VIEWS
+---VIEW 1
+CREATE VIEW vw_MemberOverview AS
 SELECT 
-    dp.name  AS UserName,
-    o.name   AS TableName,
-    p.permission_name  AS Permission
-FROM sys.database_permissions p
-JOIN sys.database_principals dp 
-    ON p.grantee_principal_id = dp.principal_id
-JOIN sys.objects o 
-    ON p.major_id = o.object_id
-WHERE dp.name IN ('Cashier', 'Manager')
-ORDER BY UserName, TableName;
+    m.MemberName,
+    m.HawaiianName,
+    r.RoleName,
+    s.StatusName
+FROM Member m
+JOIN MemberStatus s ON m.MemberStatusID = s.MemberStatusID
+JOIN MemberRole mr ON m.MemberID = mr.MemberID
+JOIN Role r ON mr.RoleID = r.RoleID;
+
+SELECT * FROM vw_MemberOverview
+
+
+---VIEW 2
+CREATE VIEW vw_PerformanceRoster AS
+SELECT
+    p.PerformanceTitle,
+    p.PerformanceDate,
+    p.Location,
+    m.MemberName,
+    m.HawaiianName
+FROM Performance p
+JOIN MemberPerformance mp
+    ON p.PerformanceID = mp.PerformanceID
+JOIN Member m
+    ON mp.MemberID = m.MemberID;
 GO
 
---STEP 5 Monitor database size (SixeMB is column name)
---GO will run each database
-SELECT 
-    name        AS FileName,
-    size / 128.0 AS SizeMB
-FROM sys.database_files;
-GO
-
---STEP 6 Backup Database (Pathway)
-BACKUP DATABASE PixelPizzaPalace
-TO DISK = '/var/opt/mssql/data/PixelPizzaPalace.bak'
-WITH FORMAT;
-GO
-
---STEP 7 Create an Index - Do most often as DBA
--- Create an index so searches by ProductName are faster
-CREATE NONCLUSTERED INDEX IX_Products_Name 
-ON Products(ProductName);
-GO
-
--- Verify the index was created by listing all indexes on Products
-SELECT 
-    i.name      AS IndexName,
-    i.type_desc AS IndexType,
-    COL_NAME(ic.object_id, ic.column_id) AS ColumnName
-FROM sys.indexes i
-JOIN sys.index_columns ic 
-    ON i.object_id = ic.object_id 
-    AND i.index_id = ic.index_id
-WHERE i.object_id = OBJECT_ID('Products')
-ORDER BY i.name;
-GO
-
---=============================================--
---                  PART 2                       
---=============================================--     
-
---Part 1 of 2 > Log in and create page file
-
--- ===== PART 2 STEP 2: ADD INVENTORY USER =====
-
-CREATE LOGIN InventoryMgr WITH PASSWORD = 'Inv123!';
-GO
-
-USE PixelPizzaPalace;
-GO
-
--- Create user for the login inside the database
-CREATE USER InventoryMgr FOR LOGIN InventoryMgr;
-GO
-
--- Inventory manager can only view and update Products
-GRANT SELECT, UPDATE ON Products TO InventoryMgr;
-GO
-
-
--- ===== PART 2 STEP 2 CHECK PERMISSIONS =====
-SELECT 
-    dp.name  AS UserName,
-    o.name   AS TableName,
-    p.permission_name AS Permission
-FROM sys.database_permissions p
-JOIN sys.database_principals dp 
-    ON p.grantee_principal_id = dp.principal_id
-JOIN sys.objects o 
-    ON p.major_id = o.object_id
-WHERE dp.name = 'InventoryMgr'
-ORDER BY TableName;
-GO
-
-
--- ===== PART 2 STEP 3: TABLE SIZES =====
-USE PixelPizzaPalace;
-GO
-
-SELECT 
-    t.name              AS TableName,
-    p.rows              AS NumberOfRows,
-    SUM(a.total_pages) * 8 AS TotalSpaceKB
-FROM sys.tables t
-JOIN sys.indexes i 
-    ON t.object_id = i.object_id
-JOIN sys.partitions p 
-    ON i.object_id = p.object_id 
-    AND i.index_id = p.index_id
-JOIN sys.allocation_units a 
-    ON p.partition_id = a.container_id
-GROUP BY t.name, p.rows
-ORDER BY TotalSpaceKB DESC;
-GO
-
--- ===== PART 2 STEP 4: BACKUP AND RESTORE =====
---*4a: Add a new product
-INSERT INTO Products (ProductName, Price, Stock)
-VALUES ('Ice Cream Sundae', 5.99, 60);
-GO
-
---*4b: Back up the database with the new product included
-BACKUP DATABASE PixelPizzaPalace
-TO DISK = '/var/opt/mssql/data/PixelPizzaPalace_New.bak'
-WITH FORMAT;
-GO
-
---*4c: Delete the product and verify it is gone
-DELETE FROM Products WHERE ProductName = 'Ice Cream Sundae';
-GO
-
-SELECT * FROM Products;
-GO
-
---*4d: Restore the database and verify the product came back
-USE master;
-GO
-
--- Take the database offline so we can restore it
-ALTER DATABASE PixelPizzaPalace SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-GO
-
-RESTORE DATABASE PixelPizzaPalace
-FROM DISK = '/var/opt/mssql/data/PixelPizzaPalace_New.bak'
-WITH REPLACE;
-GO
-
--- Bring the database back online for all users
-ALTER DATABASE PixelPizzaPalace SET MULTI_USER;
-GO
-
-USE PixelPizzaPalace;
-GO
-
-SELECT * FROM Products;
-GO
-
--- ===== PART 2 STEP 5: REFLECTION ===== 
--- Reflection
--- Question 1: The three most important tasks were...
---      1. Create Users and their Roles
---      2. Access Levels 
---      3. Backing up the data and secure it
-
--- Question 2: Pixel Pizza Palace needs permission control because...
---  The business have multiple individuals that only need access for particluar part of their job duties.
---  A cashier only needs the product and order information while a manager has access to all information.
--- This ensures that information is protected and for a need-to-know basis.
-
--- Question 3: Without regular backups...
--- If the information is not backup regularly, the information may go missing and is unable to retrieve. 
--- There are many horror stories of companies not having information backup and lose their data to ransomware attacks.
--- It is vital for each part of the company and departments to find a way to consistently back up their data.
--- Even if the most important information is kept safe, the day-to-day tasks that is low priority can take
--- a lot of time and money to restore or recreate.
+SELECT * FROM vw_PerformanceRoster
